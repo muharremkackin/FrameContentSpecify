@@ -7,7 +7,7 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-app.UseHeaderMiddleware(new HeaderBuilder().AddDefaultHeaderPolicy());
+app.UseHeaderMiddleware(new HeaderBuilder(builder.Environment.ContentRootPath).AddDefaultHeaderPolicy());
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
