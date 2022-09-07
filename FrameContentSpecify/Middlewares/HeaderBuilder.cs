@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using FrameContentSpecify.Extensions;
+using Newtonsoft.Json;
 
 namespace FrameContentSpecify.Middlewares
 {
@@ -7,8 +8,12 @@ namespace FrameContentSpecify.Middlewares
         private readonly HeaderPolicy _policy = new HeaderPolicy();
         private string _contentSecurityPolicy = "";
         private string _contentRootPath { get; set; }
+        private HttpContext _context;
 
-        public HeaderBuilder(string contentRootPath) { _contentRootPath = contentRootPath; }
+        public HeaderBuilder(HttpContext context, string contentRootPath) { 
+            _context = context; 
+            _contentRootPath = contentRootPath; 
+        }
 
         public HeaderBuilder AddDefaultHeaderPolicy()
         {
@@ -21,15 +26,44 @@ namespace FrameContentSpecify.Middlewares
         public HeaderBuilder AddCSPFrameAncestors()
         {
             string file = _contentRootPath + "frame-domains.json";
+            _contentSecurityPolicy += "frame-ancestors 'self' https://*.birlesikodeme.com ";
             using (StreamReader r = new StreamReader(file))
             {
                 string jsonFrameDomains = r.ReadToEnd();
                 List<string>? frameDomains = JsonConvert.DeserializeObject<List<string>>(jsonFrameDomains);
-
-                if (frameDomains != null && frameDomains.Count() > 0)
+                
+                var domain = _context.Request.Headers["Referer"].ToString().TrimEnd(new char[] { '/' });
+                var collection = domain.MatchDomain();
+                if (collection != null && collection.Count > 0)
                 {
-                    _contentSecurityPolicy += "frame-ancestors " + string.Join(' ', frameDomains) + ";";
+                    var matchedDomain = collection[0].Value.ToString();
+
+                    Uri uri = new Uri(matchedDomain);
+
+                    if (uri.DnsSafeHost == "localhost")
+                    {
+                        _contentSecurityPolicy += domain + ";";
+                    } else
+                    {
+                        var uriScheme = uri.Scheme;
+                        var domainInfo = uri.DnsSafeHost.GetDomainInfo();
+
+                        var frameDomain = uriScheme + "://*." + domainInfo?.Domain + "." + domainInfo?.TLD;
+
+                        if (frameDomains.Contains(frameDomain))
+                        {
+                            _contentSecurityPolicy += frameDomain + ";";
+                        }
+                        else
+                        {
+                            // add domain to json file
+                        }
+                    }
+
+                    
                 }
+
+                
             }
 
             _policy.SetHeaders["Content-Security-Policy"] = _contentSecurityPolicy;

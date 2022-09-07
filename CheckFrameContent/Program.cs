@@ -1,13 +1,9 @@
-using FrameContentSpecify.Middlewares;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
-
-app.UseHeaderMiddleware(builder.Environment);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

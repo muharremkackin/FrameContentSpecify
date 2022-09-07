@@ -2,10 +2,9 @@
 {
     public static class MiddlewareExtensions
     {
-        public static IApplicationBuilder UseHeaderMiddleware(this IApplicationBuilder app, HeaderBuilder builder)
+        public static IApplicationBuilder UseHeaderMiddleware(this IApplicationBuilder app, IWebHostEnvironment environment)
         {
-            HeaderPolicy policy = builder.Build();
-            return app.UseMiddleware<HeaderMiddleware>(policy);
+            return app.UseMiddleware<HeaderMiddleware>(environment);
         }
     }
 }
